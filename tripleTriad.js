@@ -5,7 +5,8 @@
 /*:
 * @target MZ
  * @plugindesc Triple Triad Full Card Game.
- * @author Raizen (Mauricio Pastana)
+ * @author Echocondria via Raizen (Mauricio Pastana)
+ * @url https://www.echocondria.net
  * @help tripleTriad.js
  * Configure all parameters on the plugin: All calls are done by Script Calls
  * To start a match : tripleTriad(enemy_id)
@@ -14,6 +15,7 @@
  * To check if player has a certain card: tripleTriadHasCard(card_id)
  * To check the number of cards owned: tripleTriadCardsOwned()
  * To check the last match score from 1-9 : tripleTriadCheckLastScore()
+ * Original Author Url: https://raizen884.itch.io/
  
 
  * @command Start Duel
@@ -581,7 +583,7 @@ var IgnisEngine = IgnisEngine || {};
 IgnisEngine.TripleTriad = IgnisEngine.TripleTriad || {};
 IgnisEngine.TripleTriad.VERSION = [1, 0, 0];
 
-const pluginName = "tripleTriad";
+const pluginName = "TripleTriad";
 
 PluginManager.registerCommand(pluginName, "Start Duel", args => {
     const enemy_id = parseInt(args['enemyId']);

@@ -1,21 +1,20 @@
 //=============================================================================
-// Ignis Collectible Cards for RPG Maker MZ
+// Collectible Cards for RPG Maker MZ
 //=============================================================================
 
 /*:
 * @target MZ
- * @plugindesc Ignis Collectible Cards, Compatible with Triple Triad MZ.
- * @author Reisen (Mauricio Pastana)
- * @url https://www.patreon.com/raizen884
+ * @plugindesc Collectible Cards, Compatible with Triple Triad MZ.
+ * @author Echocondria via Reisen (Mauricio Pastana)
+ * @url https://www.echocondria.net
  * @help Ignis Collectible Card - this plugins is under zlib license
- * For support and new plugins join our discord server! https://discord.gg/Kh9XXZ2
- * Want to support new creations? be a patreon! 
  * 
  * This is the collectible cards for MZ! It has been optimized to be used with
  * Triple Triad, but you can use it by its own also.
  * It is very simple, just configure the parameters, you do not need to configure the cards
  * if you are using Triple Triad, if you want boosters to be items just create an usable
  * item that calls the booster opening scene.
+ * Original Author Url: https://raizen884.itch.io/
  
 
  * @command Add Booster Pack
@@ -37,7 +36,7 @@
  */
 
 (() => {
-    const pluginName = 'IgnisBoosterPack';
+    const pluginName = 'BoosterPack';
 
     PluginManager.registerCommand(pluginName, 'Add Booster Pack', args => {
         const boosterNum = Number(args.boosterNum);
@@ -82,7 +81,7 @@ IgnisEngine.BoosterPack.VERSION = [1, 0, 0];
 
 //-----------------------------------------------------------------------------
 // Triple Triad Image Handler
-//
+// 
 // The scene class of the battle screen.
 
 ImageManager.loadTripleTriad = function (filename, hue) {
