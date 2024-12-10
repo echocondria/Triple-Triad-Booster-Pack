@@ -34,78 +34,45 @@
  * @arg single
  * @type boolean
  * @desc Single opens only one pack, if off, all packs will be opened.
- * 
- * @param Booster Pack Configuration
- * @type struct<BoosterConfig>[]
- * @desc Configure each booster here, card ids are automatic if using Triple Triad
- * 
- * @param Booster Scene Configuration
- * @type struct<BoosterScene>
- * @desc Configure each element in the booster pack screen
- * 
- * @param Card Configuration
- * @type struct<CardConfig>[]
- * @desc Configure each card here, only if you do not use triple triad plugin
- * 
- 
-*/
-/*~struct~BoosterScene:
- * @param card positions
- * @type struct<CardPos>[]
- * @desc Position of each card on the booster pack
- * @param AnimationBooster
- * @type number
- * @desc number of the animation id to play when the booster is created
- * @param AnimationOpen
- * @type number
- * @desc number of the animation id to play when the booster is opened
- * @param BackImage
- * @type file
- * @dir img/Triple_Triad/
- * @desc Background Image
- * @param BackCard
- * @type file
- * @dir img/Triple_Triad/
- * @desc Image of the back of the card
-*/
+ */
 
-/*~struct~CardPos:
- * @param xPos
- * @type number
- * @min -10000
- * @text X position
- * @desc x position of the card
- * @param yPos
- * @type number
- * @min -10000
- * @text Y position
- * @desc y position of the card
-*/
+(() => {
+    const pluginName = 'IgnisBoosterPack';
 
-/*~struct~BoosterConfig:
- * @param cards
- * @type number[]
- * @desc cards on this booster but id.
- * @param boosterImage
- * @type file
- * @dir img/Triple_Triad/
- * @desc Image of the booster pack
-*/
+    PluginManager.registerCommand(pluginName, 'Add Booster Pack', args => {
+        const boosterNum = Number(args.boosterNum);
+        const cardsOpened = Number(args.cardsOpened);
 
-/*~struct~CardConfig:
- * @param Image_Player_1
- * @type file
- * @dir img/Triple_Triad/
- * @text Card Image
- * @param Rarity
- * @type number
- * @max 10
- * @min 1
- * @desc Rarity of the card, the higher, the harder to open on the booster pack
- * @param gainItem
- * @type number
- * @desc Item to be gained from the database, 0 if your cards are not items.
-*/
+        if (isNaN(boosterNum) || boosterNum <= 0) {
+            console.error('Invalid boosterNum:', boosterNum);
+            $gameMessage.add('Error: Invalid booster number.');
+            return;
+        }
+
+        if (isNaN(cardsOpened) || cardsOpened < 0) {
+            console.error('Invalid cardsOpened:', cardsOpened);
+            $gameMessage.add('Error: Invalid number of cards opened.');
+            return;
+        }
+
+        // Add booster pack to inventory logic here
+        console.log(`Added booster pack: ${boosterNum}, cards opened: ${cardsOpened}`);
+    });
+
+    PluginManager.registerCommand(pluginName, 'Open Booster Pack', args => {
+        const single = args.single === 'true';
+
+        if (typeof single !== 'boolean') {
+            console.error('Invalid single value:', single);
+            $gameMessage.add('Error: Invalid single value.');
+            return;
+        }
+
+        // Open booster pack logic here
+        console.log(`Opening booster pack, single mode: ${single}`);
+    });
+})();
+
 var IgnisEngine = IgnisEngine || {};
 IgnisEngine.BoosterPack = IgnisEngine.BoosterPack || {};
 IgnisEngine.BoosterPack.VERSION = [1, 0, 0];
@@ -126,55 +93,142 @@ function Game_Ignis_Boosters() {
     this._packs = [];
     this._boosterpacks = [];
     this._boosterPackImages = [];
-    if (IgnisEngine.TripleTriad)
-        this.cardList = JSON.parse(PluginManager.parameters('tripleTriad')['Card Creation']);
-    else
+
+    if (IgnisEngine.TripleTriad) {
+        const cardCreationParam = PluginManager.parameters('tripleTriad')['Card Creation'];
+        if (!cardCreationParam) {
+            console.error('Card Creation parameter is missing in Triple Triad plugin.');
+            return;
+        }
+        this.cardList = JSON.parse(cardCreationParam);
+    } else {
+        if (!IgnisEngine.BoosterPack || !IgnisEngine.BoosterPack.cardList) {
+            console.error('BoosterPack card list is missing in IgnisEngine.');
+            return;
+        }
         this.cardList = IgnisEngine.BoosterPack.cardList;
+    }
+
+    if (!IgnisEngine.BoosterPack || !IgnisEngine.BoosterPack.boosterPackConfig) {
+        console.error('BoosterPack configuration is missing in IgnisEngine.');
+        return;
+    }
+
     for (let n = 0; n < IgnisEngine.BoosterPack.boosterPackConfig.length; n++) {
-        let config = JSON.parse(IgnisEngine.BoosterPack.boosterPackConfig[n]);
-        let base = JSON.parse(config.cards).map(a => parseInt(a));
+        let config;
+        try {
+            config = JSON.parse(IgnisEngine.BoosterPack.boosterPackConfig[n]);
+        } catch (e) {
+            console.error(`Error parsing booster pack config at index ${n}:`, e);
+            continue;
+        }
+
+        let base;
+        try {
+            base = JSON.parse(config.cards).map(a => parseInt(a));
+        } catch (e) {
+            console.error(`Error parsing cards in booster pack config at index ${n}:`, e);
+            continue;
+        }
+
         this._boosterpacks[n] = [];
         for (const card of base) {
-            cardRarity = parseInt(JSON.parse(this.cardList[card]).Rarity);
-            for (var i = 0; i < cardRarity; i++)
+            let cardRarity;
+            try {
+                cardRarity = parseInt(JSON.parse(this.cardList[card]).Rarity);
+            } catch (e) {
+                console.error(`Error parsing card rarity for card ${card} in booster pack config at index ${n}:`, e);
+                continue;
+            }
+
+            for (let i = 0; i < cardRarity; i++) {
                 this._boosterpacks[n].push(card);
+            }
         }
+
         this._boosterPackImages[n] = config.boosterImage;
-        console.log(this._boosterpacks[n])
+        console.log(this._boosterpacks[n]);
     }
-};
+}
 
 Game_Ignis_Boosters.prototype.openPack = function () {
-    let pack = this.getPack();
-    let newPack = [];
-    for (let n = 0; n < pack[1]; n++) {
-        let cardNum = this._boosterpacks[pack[0]][Math.randomInt(this._boosterpacks[pack[0]].length)];
-        newPack.push(cardNum);
-        if (IgnisEngine.TripleTriad)
-            $dataTripleTriad.all_cards.push(cardNum);
-        else {
-            let cardList = JSON.parse(IgnisEngine.BoosterPack.cardList[cardNum]);
-            $gameParty.gainItem($dataItems[parseInt(cardList.gainItem)], 1);
+    try {
+        let pack = this.getPack();
+        if (!pack || pack.length < 2) {
+            console.error('Invalid pack data:', pack);
+            $gameMessage.add('Error: Invalid pack data.');
+            return;
         }
 
+        let newPack = [];
+        for (let n = 0; n < pack[1]; n++) {
+            let cardNum = this._boosterpacks[pack[0]][Math.randomInt(this._boosterpacks[pack[0]].length)];
+            newPack.push(cardNum);
+            if (IgnisEngine.TripleTriad) {
+                $dataTripleTriad.all_cards.push(cardNum);
+            } else {
+                let cardList;
+                try {
+                    cardList = JSON.parse(IgnisEngine.BoosterPack.cardList[cardNum]);
+                } catch (e) {
+                    console.error(`Error parsing card list for card number ${cardNum}:`, e);
+                    continue;
+                }
+                $gameParty.gainItem($dataItems[parseInt(cardList.gainItem)], 1);
+            }
+        }
+        return [newPack, this._boosterPackImages[pack[0]]];
+    } catch (e) {
+        console.error('Error opening booster pack:', e);
+        $gameMessage.add('Error: Unable to open booster pack.');
+        return null;
     }
-    return [newPack, this._boosterPackImages[pack[0]]];
 };
 
 Game_Ignis_Boosters.prototype.getPack = function () {
-    return this._packs.shift();
+    try {
+        if (this._packs.length === 0) {
+            console.error('No packs available to get.');
+            return null;
+        }
+        return this._packs.shift();
+    } catch (e) {
+        console.error('Error getting booster pack:', e);
+        return null;
+    }
 };
 
 Game_Ignis_Boosters.prototype.addPack = function (packNum, numCards) {
-    return this._packs.push([packNum, numCards]);
+    try {
+        if (isNaN(packNum) || packNum < 0 || isNaN(numCards) || numCards <= 0) {
+            console.error('Invalid packNum or numCards:', packNum, numCards);
+            $gameMessage.add('Error: Invalid pack number or number of cards.');
+            return;
+        }
+        return this._packs.push([packNum, numCards]);
+    } catch (e) {
+        console.error('Error adding booster pack:', e);
+    }
 };
 
 Game_Ignis_Boosters.prototype.hasPacks = function () {
-    return this._packs.length != 0;
+    try {
+        return this._packs.length != 0;
+    } catch (e) {
+        console.error('Error checking if packs are available:', e);
+        return false;
+    }
 };
+
 Game_Ignis_Boosters.prototype.openSingle = function () {
-    return this._openSingle;
+    try {
+        return this._openSingle;
+    } catch (e) {
+        console.error('Error checking openSingle status:', e);
+        return false;
+    }
 };
+
 Game_Ignis_Boosters.prototype.switchMode = function (mode) {
     this._openSingle = mode;
 };
